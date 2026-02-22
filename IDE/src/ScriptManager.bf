@@ -316,49 +316,6 @@ namespace IDE
 			mTimeoutMS = timeoutMS;
 		}
 
-		public Result<void> UnQuoteString(StringView str, String outString)
-		{
-			String allocStr = null;
-			StringView useStr = str;
-
-			int varStart = -1;
-
-			for (int i = 0; i < useStr.Length - 1; i++)
-			{
-				if ((useStr[i] == '\\') && (useStr[i+1] == '$'))
-				{
-					if (varStart == -1)
-					{
-						varStart = i;
-					}
-					else if (mContext != null)
-					{
-						var varName = useStr.Substring(varStart + 2, i - varStart - 2);
-						var replaceStr = "";
-
-						if (mContext.mVars.TryGetValueAlt(varName, var value))
-						{
-							if (value.VariantType == typeof(String))
-								replaceStr = value.Get<String>();
-						}
-
-						if (allocStr == null)
-							allocStr = scope:: String(str);
-
-						allocStr.Remove(varStart, i - varStart + 2);
-						allocStr.Insert(varStart, replaceStr);
-
-						i -= varName.Length - replaceStr.Length + 3;
-
-						useStr = allocStr;
-						varStart = -1;
-					}
-				}
-			}
-
-			return useStr.UnQuoteString(outString);
-		}
-
 		public void Exec(StringView cmd)
 		{
 			var cmd;
@@ -480,7 +437,7 @@ namespace IDE
 							{
 								str.Append(argView, 2, argView.Length - 3);
 							}
-							else if (UnQuoteString(argView, str) case .Err)
+							else if (argView.UnQuoteString(str) case .Err)
 								Fail("Failed to unquote string");
 
 							if (str.Contains('$'))
@@ -499,7 +456,7 @@ namespace IDE
 
 								String newStr = scope:: .();
 								String err = scope .();
-								if (!gApp.DoResolveConfigString("", workspaceOptions, project, projectOptions, str, err, newStr))
+								if (!gApp.DoResolveConfigString("", workspaceOptions, project, projectOptions, str, err, newStr, mContext))
 								{
 									Fail(scope String()..AppendF("Unknown macro string '{}' in '{}'", err, str));
 								}
