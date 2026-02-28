@@ -3113,20 +3113,23 @@ namespace IDE.ui
 				var endPos = (int32)sewc.CursorTextPos;
 				var startPos = endPos;
 
-				for (var n = 0; n < insertStr.Length; n++)
+				if (insertStr != null)
 				{
-					if (n + startPos >= sewc.mData.mTextLength)
-						break;
+					for (var n = 0; n < insertStr.Length; n++)
+					{
+						if (n + startPos >= sewc.mData.mTextLength)
+							break;
 
-					var data = sewc.mData.mText[n+startPos];
-					if (data.mChar != insertStr[n])
-						break;
+						var data = sewc.mData.mText[n+startPos];
+						if (data.mChar != insertStr[n])
+							break;
 
-					endPos++;
+						endPos++;
+					}
+
+					if (startPos != endPos)
+						return EditSelection(startPos, endPos);
 				}
-
-				if (startPos != endPos)
-					return EditSelection(startPos, endPos);
 
 				var wentOverWhitespace = false;
 				while ((startPos <= endPos) && (startPos > 0))
