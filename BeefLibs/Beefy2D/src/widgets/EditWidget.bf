@@ -4359,7 +4359,9 @@ namespace Beefy.widgets
 			// There is a case, when we do not want to merge two cursors,
 			// which is when both of them do not have a selection.
 			// Example: 123|123|123|
-			if ((!lhs.mSelection.HasValue) && (!rhs.mSelection.HasValue))
+			if ((!lhs.mSelection.HasValue) || (!lhs.mSelection.Value.HasSelection))
+				return false;
+			if ((!rhs.mSelection.HasValue) || (!rhs.mSelection.Value.HasSelection))
 				return false;
 
 			var lhsSelection = GetAsSelection(lhs, true);
