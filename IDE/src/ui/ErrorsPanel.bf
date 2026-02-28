@@ -60,7 +60,7 @@ namespace IDE.ui
 				preffix.ToUpper();
 				var description = this.mSubItems[1].mLabel;
 
-				buffer.AppendF("{}: {} at line {}:{} in {}", preffix, description, this.mLine, this.mColumn, this.mFilePath);
+				buffer.AppendF("{}: {} at line {}:{} in {}", preffix, description, this.mLine+1, this.mColumn, this.mFilePath);
 			}
 
 			public override void DrawSelect(Graphics g)
