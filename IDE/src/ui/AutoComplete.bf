@@ -3123,15 +3123,16 @@ namespace IDE.ui
 
 					var isWhiteSpace = data.mChar.IsWhiteSpace;
 					var isLetterOrDigit = data.mChar.IsLetterOrDigit;
+					var mixinCase = (data.mChar == '!') && (startPos == endPos);
 
 					// When it's not a override method for example
 					// we break right after we find a non-letter-or-digit character
 					// So we would only select last word
-					if ((implText == null) && (!isLetterOrDigit) && (data.mChar != '_') && (data.mChar != '@'))
+					if ((implText == null) && (!isLetterOrDigit) && (data.mChar != '_') && (data.mChar != '@') && (!mixinCase))
 						break;
 
 					// This is for cases, when we are searching for 
-					if ((!isLetterOrDigit) && (type != .Keyword) && (!isWhiteSpace) && (data.mChar != '_'))
+					if ((!isLetterOrDigit) && (type != .Keyword) && (!isWhiteSpace) && (data.mChar != '_') && (!mixinCase))
 						break;
 
 					wentOverWhitespace = isWhiteSpace;
