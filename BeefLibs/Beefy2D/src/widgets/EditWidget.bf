@@ -4256,6 +4256,9 @@ namespace Beefy.widgets
 			}
 			else if (cursor.mVirtualCursorPos.HasValue)
 			{
+				var prevCurrentCursor = mCurrentTextCursor;
+				SetTextCursor(cursor);
+
 				var line = cursor.mVirtualCursorPos.Value.mLine;
 				var column = cursor.mVirtualCursorPos.Value.mColumn;
 
@@ -4263,6 +4266,7 @@ namespace Beefy.widgets
 				GetLineCharAtCoord(line, x, var lineChar, ?);
 				int textPos = GetTextIdx(line, lineChar);
 
+				SetTextCursor(prevCurrentCursor);
 				return EditSelection(textPos, textPos);
 			}
 			else
@@ -4314,7 +4318,7 @@ namespace Beefy.widgets
 			return (lhsSelection.mStartPos <=> rhsSelection.mStartPos);
 		}
 
-		public void RemoveIntersectingTextCursors()
+		public void MergeIntersectingTextCursors()
 		{
 			if (mTextCursors.Count == 1)
 				return;
@@ -4331,17 +4335,19 @@ namespace Beefy.widgets
 
 					if (TextCursorsIntersects(lhs, rhs))
 					{
-						if (lhs.mId != 0)
+
+						if (lhs.mId == 0)
 						{
-							delete mTextCursors[x];
-							mTextCursors.RemoveAt(x);
+							MergeTextCursors(lhs, rhs);
+							delete rhs;
+							mTextCursors.RemoveAt(y);
 						}
 						else
 						{
-							delete mTextCursors[y];
-							mTextCursors.RemoveAt(y);
+							MergeTextCursors(rhs, lhs);
+							delete lhs;
+							mTextCursors.RemoveAt(x);
 						}
-
 						break;
 					}
 				}
@@ -4350,7 +4356,12 @@ namespace Beefy.widgets
 
 		public bool TextCursorsIntersects(TextCursor lhs, TextCursor rhs)
 		{
-			// Returns true if two text cursors intersect or collide with each other
+			// There is a case, when we do not want to merge two cursors,
+			// which is when both of them do not have a selection.
+			// Example: 123|123|123|
+			if ((!lhs.mSelection.HasValue) && (!rhs.mSelection.HasValue))
+				return false;
+
 			var lhsSelection = GetAsSelection(lhs, true);
 			var rhsSelection = GetAsSelection(rhs, true);
 
@@ -4358,6 +4369,32 @@ namespace Beefy.widgets
 				return true;
 
 			return !((lhsSelection.mEndPos <= rhsSelection.mStartPos) || (rhsSelection.mEndPos <= lhsSelection.mStartPos));
+		}
+
+		void MergeTextCursors(TextCursor primary, TextCursor secondary)
+		{
+			var cursorAtStart = false;
+			if ((primary.mSelection.HasValue) && (primary.mSelection.Value.MinPos == primary.mCursorTextPos))
+				cursorAtStart = true;
+
+			var lhsSelection = GetAsSelection(primary, true);
+			var rhsSelection = GetAsSelection(secondary, true);
+
+			primary.mSelection = EditSelection(
+				Math.Min(lhsSelection.mStartPos, rhsSelection.mStartPos),
+				Math.Max(lhsSelection.mEndPos, rhsSelection.mEndPos)
+			);
+
+			primary.mCursorTextPos = primary.mSelection.Value.mEndPos;
+			primary.mVirtualCursorPos = null;
+			primary.mJustInsertedCharPair = false;
+			primary.mCursorImplicitlyMoved = false;
+
+			if (cursorAtStart)
+			{
+				primary.mCursorTextPos = primary.mSelection.Value.mStartPos;
+				primary.mSelection = EditSelection(primary.mSelection.Value.mEndPos, primary.mSelection.Value.mStartPos);
+			}
 		}
 
 		public virtual void AddSelectionToNextFindMatch(bool createCursor = true, bool exhaustiveSearch = false)
@@ -4680,7 +4717,7 @@ namespace Beefy.widgets
 				isSingleInvoke = true;
 			}
 
-			ewc.RemoveIntersectingTextCursors();
+			ewc.MergeIntersectingTextCursors();
 
 			for (var cursor in ewc.mTextCursors)
 			{
@@ -4697,7 +4734,7 @@ namespace Beefy.widgets
 		public override void KeyChar(KeyCharEvent keyEvent)
 		{
 			var ewc = Content;
-			ewc.RemoveIntersectingTextCursors();
+			ewc.MergeIntersectingTextCursors();
 			for (var cursor in ewc.mTextCursors)
 			{
 				ewc.SetTextCursor(cursor);
