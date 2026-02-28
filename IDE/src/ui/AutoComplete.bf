@@ -3109,8 +3109,25 @@ namespace IDE.ui
 
 			EditSelection CalculateSelection(String implText)
 			{
+				// Case, when cursor is at the start of something it will replace with 'insertStr'
 				var endPos = (int32)sewc.CursorTextPos;
 				var startPos = endPos;
+
+				for (var n = 0; n < insertStr.Length; n++)
+				{
+					if (n + startPos >= sewc.mData.mTextLength)
+						break;
+
+					var data = sewc.mData.mText[n+startPos];
+					if (data.mChar != insertStr[n])
+						break;
+
+					endPos++;
+				}
+
+				if (startPos != endPos)
+					return EditSelection(startPos, endPos);
+
 				var wentOverWhitespace = false;
 				while ((startPos <= endPos) && (startPos > 0))
 				{
@@ -3210,7 +3227,10 @@ namespace IDE.ui
 				var prevText = scope String();
 				sewc.ExtractString(editSelection.MinPos, editSelection.Length, prevText);
 				if ((prevText.Length > 0) && (insertText == prevText))
+				{
+					sewc.CursorTextPos = editSelection.mEndPos;
 					continue;
+				}
 
 				sewc.CurSelection = editSelection;
 				sewc.CurCursorTextPos = (int32)editSelection.MaxPos;
