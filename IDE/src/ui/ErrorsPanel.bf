@@ -18,6 +18,21 @@ namespace IDE.ui
 			{
 				return new ErrorsListViewItem();
 			}
+
+			public override void KeyDown(KeyCode keyCode, bool isRepeat)
+			{
+				base.KeyDown(keyCode, isRepeat);
+
+				switch (keyCode)
+				{
+				case (KeyCode)'C':
+				    if (mWidgetWindow.GetKeyFlags(true) == KeyFlags.Ctrl)
+				    {
+				        ((ErrorsPanel)mParent).CopySelected();
+				    }
+				default:
+				}
+			}
 		}
 
 		public class ErrorsListViewItem : IDEListViewItem
@@ -36,16 +51,9 @@ namespace IDE.ui
 					var menuItemCopySingle = menu.AddItem("Copy");
 					menuItemCopySingle.mOnMenuItemSelected.Add(new (evt) =>
 					{
-						String buffer = scope .();
-						mListView.GetRoot().WithSelectedItems(scope (item) =>
-							{
-								var errorItem = (ErrorsListViewItem)item;
-								if (!buffer.IsEmpty)
-									buffer.Append("\n");
-								errorItem.CopyError(buffer);
-							});
-						if (!buffer.IsEmpty)
-							gApp.SetClipboardText(buffer);
+						var errorsListView = ((ErrorsListView)mListView);
+						var errorsPanel = ((ErrorsPanel)errorsListView.mParent);
+						errorsPanel.CopySelected();
 					});
 
 					MenuWidget menuWidget = DarkTheme.sDarkTheme.CreateMenuWidget(menu);
@@ -455,6 +463,20 @@ namespace IDE.ui
 			let lvItem = (ErrorsListViewItem)root.GetChildAtIndex(0);
 			lvItem.Focused = true;
 			lvItem.Goto();
+		}
+
+		public void CopySelected()
+		{
+			String buffer = scope .();
+			mErrorLV.GetRoot().WithSelectedItems(scope (item) =>
+				{
+					var errorItem = (ErrorsListViewItem)item;
+					if (!buffer.IsEmpty)
+						buffer.Append("\n");
+					errorItem.CopyError(buffer);
+				});
+			if (!buffer.IsEmpty)
+				gApp.SetClipboardText(buffer);
 		}
 	}
 }
